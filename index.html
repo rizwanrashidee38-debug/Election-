@@ -1,657 +1,588 @@
 
-<!DOCTYPE html>
+
+                                    
+            <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chanakya: Indian Politics Simulator</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Indian Political Election Simulator</title>
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --panel-dark: #1e293b;
-            --accent-bjp: #ff9933;
-            --accent-inc: #138808;
-            --accent-regional: #06b6d4;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --primary: #1a365d;
+            --accent: #d69e2e;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --border: #e2e8f0;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            background: var(--panel-dark);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
-            border: 1px solid #334155;
-        }
-
-        .screen {
-            display: none;
-            padding: 40px;
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        h1, h2, h3 {
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        h1 { text-align: center; color: #f1f5f9; font-size: 2.5rem; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; }
+        h1, h2, h3 { color: var(--primary); margin-bottom: 20px; }
+        .hidden { display: none !important; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; transition: all 0.2s; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-accent { background: var(--accent); color: white; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; }
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .card { border: 1px solid var(--border); border-radius: 8px; padding: 20px; background: #fff; cursor: pointer; transition: border 0.2s; }
+        .card:hover, .card.selected { border-color: var(--primary); box-shadow: 0 0 10px rgba(26,54,93,0.15); }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; margin-top: 5px; }
+        .badge-high { background: #38a169; }
+        .badge-med { background: #dd6b20; }
+        .badge-low { background: #e53e3e; }
         
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-top: -15px;
-            margin-bottom: 40px;
-        }
-
-        /* Setup Screen Styles */
-        .party-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .party-card {
-            background: #111827;
-            border: 2px solid #374151;
-            border-radius: 12px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .party-card:hover {
-            transform: translateY(-3px);
-            border-color: #64748b;
-        }
-
-        .party-card.selected {
-            border-color: var(--accent-bjp);
-            background: #1e293b;
-            box-shadow: 0 0 15px rgba(255, 153, 51, 0.2);
-        }
-
-        .party-card h3 { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
-        .party-meta { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
-        .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-
-        .custom-party-input {
-            width: 100%;
-            padding: 12px;
-            background: #111827;
-            border: 1px solid #374151;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 1rem;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            text-align: center;
-        }
-
-        .btn:hover { background: #1d4ed8; }
-        .btn:disabled { background: #475569; cursor: not-allowed; }
-
-        /* Game Dashboard Styles */
-        .dashboard-header {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            background: #111827;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            border: 1px solid #374151;
-        }
-
-        .stat-box { text-align: center; }
-        .stat-box label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;}
-        .stat-box minival { display: block; font-size: 1.6rem; font-weight: bold; margin-top: 5px; }
-
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
-        }
-
-        .actions-panel h3 { margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 5px;}
+        /* Dashboard UI */
+        .status-bar { display: flex; justify-content: space-between; background: #edf2f7; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-weight: bold; }
+        .constituency-list { max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .constituency-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
+        .constituency-row:last-child { border-bottom: none; }
         
-        .action-card {
-            background: #111827;
-            border: 1px solid #374151;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .action-info h4 { margin-bottom: 4px; }
-        .action-info p { font-size: 0.8rem; color: var(--text-muted); }
-        
-        .action-btn {
-            background: #334155;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            min-width: 100px;
-            transition: all 0.2s;
-        }
-        .action-btn:hover { background: #475569; }
-        .action-btn:disabled { background: #1f2937; color: #4b5563; cursor: not-allowed; }
-
-        .feed-panel {
-            background: #111827;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #374151;
-            display: flex;
-            flex-direction: column;
-            height: 400px;
-        }
-
-        .feed-log {
-            flex-grow: 1;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #cbd5e1;
-            padding-right: 5px;
-        }
-
-        .feed-item {
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #1f2937;
-        }
-        .feed-item.important { color: #f59e0b; font-weight: 600; }
-
-        /* Progress Bar */
-        .progress-container {
-            background: #374151;
-            border-radius: 10px;
-            height: 10px;
-            width: 100%;
-            margin-bottom: 25px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            background: #2563eb;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Results Screen */
-        .results-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-top: 20px;
-        }
-        .chart-container {
-            background: #111827;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #374151;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .outcome-box {
-            background: #111827;
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid #374151;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .seat-badge {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #38bdf8;
-            margin: 15px 0;
-            text-align: center;
-        }
-        .verdict {
-            font-size: 1.3rem;
-            font-weight: 600;
-            text-align: center;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-        .verdict.win { background: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid #22c55e;}
-        .verdict.coalition { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;}
-        .verdict.loss { background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid #dc2626;}
-
-        /* Utilities */
-        .text-bjp { color: var(--accent-bjp); }
-        .text-inc { color: var(--accent-inc); }
-        .text-reg { color: var(--accent-regional); }
+        /* Results Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #edf2f7; }
+        .progress-container { width: 100%; background: #e2e8f0; border-radius: 10px; height: 24px; margin-top: 20px; overflow: hidden; display: flex; }
+        .progress-bar { height: 100%; text-align: center; color: white; font-size: 12px; line-height: 24px; font-weight: bold; transition: width 0.3s; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    
-    <!-- SCREEN 1: PARTY SELECTION -->
-    <div id="screen-setup" class="screen active">
-        <h1>Chanakya</h1>
-        <p class="subtitle">The Indian General Election Strategy Simulator</p>
+    <!-- SCREEN 1: Setup -->
+    <div id="screen-setup">
+        <h1>Indian Election Simulator</h1>
+        <p style="margin-bottom: 20px; color:#666;">Choose an existing major political outfit or register a custom party to prepare for the upcoming high-stakes general democratic cycle.</p>
         
-        <h2>Select Your Political Party</h2>
-        <div class="party-grid" id="party-selectors">
+        <div class="form-group">
+            <label for="leader-name">Your Name (Party Leader)</label>
+            <input type="text" id="leader-name" value="Nitin Kumar" placeholder="Enter leader name">
+        </div>
+
+        <div class="form-group">
+            <label for="election-type">Election Bracket</label>
+            <select id="election-type">
+                <option value="Lok Sabha">Lok Sabha (National - 543 Seats)</option>
+                <option value="Vidhan Sabha">Vidhan Sabha (State Assembly - 250 Seats)</option>
+            </select>
+        </div>
+
+        <h3>Select Pre-existing Party or Setup Custom</h3>
+        <div class="grid-3" id="party-selection-grid">
             <!-- Dynamic Injection -->
         </div>
 
-        <input type="text" id="custom-party-name" class="custom-party-input" placeholder="Enter Your Party's Name...">
-        <div style="margin-top: 30px;">
-            <button id="start-game-btn" class="btn" disabled onclick="startGame()">Launch Election Campaign</button>
+        <div id="custom-party-form" class="card" style="margin-bottom: 25px;">
+            <h3>Create Custom Political Force</h3>
+            <div class="form-group">
+                <label for="custom-party-name">Party Name</label>
+                <input type="text" id="custom-party-name" placeholder="e.g., Bharatiya Jan Vikas Party">
+            </div>
+            <div class="form-group">
+                <label for="custom-party-alias">Abbreviation / Alias</label>
+                <input type="text" id="custom-party-alias" placeholder="e.g., BJVP">
+            </div>
+            <div class="form-group">
+                <label for="custom-party-ideology">Core Ideology Focus</label>
+                <select id="custom-party-ideology">
+                    <option value="Right-wing Populism / Hindutva">Right-wing / Cultural Conservatism</option>
+                    <option value="Social Democracy / Secularism">Centrist / Social Democracy</option>
+                    <option value="Democratic Socialism / Left-wing">Left-wing Secularism</option>
+                    <option value="Regionalism / Social Justice">Regional / Identity Politics</option>
+                </select>
+            </div>
+            <button class="btn btn-accent" onclick="selectCustomParty()">Initialize Custom Party (Tier 3 Budget)</button>
         </div>
+
+        <button class="btn" id="start-game-btn" onclick="startGame()" style="width: 100%;">Advance to Campaign Dashboard</button>
     </div>
 
-    <!-- SCREEN 2: GAMEPLAY DASHBOARD -->
-    <div id="screen-game" class="screen">
-        <div class="progress-container">
-            <div id="game-progress" class="progress-bar"></div>
+    <!-- SCREEN 2: Dashboard & Campaign Planning -->
+    <div id="screen-dashboard" class="hidden">
+        <h2 id="dash-title">Campaign HQ</h2>
+        <div class="status-bar">
+            <div>Month: <span id="stat-month">12</span> Left</div>
+            <div>Budget: ₹<span id="stat-budget">0</span> Cr</div>
+            <div>National Popularity Support: <span id="stat-pop">0</span>%</div>
         </div>
 
-        <div class="dashboard-header">
-            <div class="stat-box">
-                <label>Time Left</label>
-                <span id="stat-weeks" class="minival">100 Weeks</span>
+        <div class="grid-3">
+            <!-- Alliance Panel -->
+            <div class="card">
+                <h3>Ideological Coalitions</h3>
+                <p style="font-size: 14px; margin-bottom: 12px; color:#555;">Propose strategic electoral treaties with ideologically aligned groups to capture cumulative vote transfers.</p>
+                <div id="alliance-options"></div>
+                <div style="margin-top: 10px; font-weight: bold; font-size:14px;">Current Alliance Partners: <span id="alliance-list">None</span></div>
             </div>
-            <div class="stat-box">
-                <label>Treasury War Chest</label>
-                <span id="stat-treasury" class="minival">₹0 Cr</span>
-            </div>
-            <div class="stat-box">
-                <label>National Momentum</label>
-                <span id="stat-momentum" class="minival">0%</span>
-            </div>
-            <div class="stat-box">
-                <label>Planned Seats</label>
-                <span id="stat-seats" class="minival">0 / 543</span>
+
+            <!-- Campaign Marketing Operations -->
+            <div class="card">
+                <h3>Rally & Ad Operations</h3>
+                <p style="font-size: 14px; margin-bottom: 15px; color:#555;">Spend strategic funds to shift national momentum metrics upward across constituencies.</p>
+                <button class="btn btn-accent" style="width: 100%; margin-bottom: 10px; font-size:13px;" onclick="buyMarketing('ads', 15)">Digital Outreach & PR (-₹15 Cr, +2% Pop)</button>
+                <button class="btn btn-accent" style="width: 100%; font-size:13px;" onclick="buyMarketing('rally', 40)">Mega Rallies & Roadshows (-₹40 Cr, +6% Pop)</button>
             </div>
         </div>
 
-        <div class="main-layout">
-            <!-- Left Side Actions -->
-            <div class="actions-panel">
-                <h3>Campaign Operations (Uses 1 Week)</h3>
-                
-                <div class="action-card">
-                    <div class="action-info">
-                        <h4>Grassroots Rallies</h4>
-                        <p>Low Cost, reliable organic base building.</p>
-                    </div>
-                    <button class="action-btn" onclick="executeAction('rally')">Run</button>
-                </div>
-
-                <div class="action-card">
-                    <div class="action-info">
-                        <h4>Mass Media Blitz</h4>
-                        <p>High cost, high national momentum swing.</p>
-                    </div>
-                    <button class="action-btn" onclick="executeAction('media')">Launch</button>
-                </div>
-
-                <div class="action-card">
-                    <div class="action-info">
-                        <h4>Corporate Fundraiser</h4>
-                        <p>Sacrifice immediate momentum to swell the treasury.</p>
-                    </div>
-                    <button class="action-btn" onclick="executeAction('fundraiser')">Host</button>
-                </div>
-
-                <h3>Structural Scaling</h3>
-                <div class="action-card">
-                    <div class="action-info">
-                        <h4>Field Candidates (+25 Seats)</h4>
-                        <p>Cost scale based on current operational structure.</p>
-                    </div>
-                    <button class="action-btn" id="btn-field-seats" onclick="executeAction('field')">Fund</button>
-                </div>
-            </div>
-
-            <!-- Right Side Updates Feed -->
-            <div class="feed-panel">
-                <h3>Campaign War Room Feed</h3>
-                <div style="border-bottom: 1px solid #334155; margin-bottom: 10px;"></div>
-                <div id="feed-log" class="feed-log">
-                    <div class="feed-item">Campaign machinery initiated. Plan your expenditures carefully to clear the 272 threshold.</div>
-                </div>
+        <!-- Candidate Selections -->
+        <div>
+            <h3>Constituency Allocation & Candidate Deployment</h3>
+            <p style="font-size: 14px; margin-bottom: 10px; color:#666;">Deploy active ticket candidates to state districts. Each fielded seat costs an administrative campaign overhead of ₹2 Cr.</p>
+            <div class="constituency-list" id="constituency-container"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>Seats Fielding Candidates: <span id="seats-fielded-count">0</span> / <span id="total-seats-count">0</span></strong>
+                <button class="btn" onclick="triggerElections()">Lock Fields & Begin Voting Phase</button>
             </div>
         </div>
     </div>
 
-    <!-- SCREEN 3: ELECTION DAY RESULTS -->
-    <div id="screen-results" class="screen">
-        <h1>General Election Results</h1>
-        <p class="subtitle" id="results-subtitle">The counting of votes across all 543 constituencies has concluded.</p>
+    <!-- SCREEN 3: Results Phase -->
+    <div id="screen-results" class="hidden">
+        <h2>Live ECI Counting Room Dashboard</h2>
+        <p id="counting-status" style="font-weight: bold; color: #dd6b20;">Counting of electronic ballots underway...</p>
+        
+        <div class="progress-container" id="results-visual-bar"></div>
 
-        <div class="results-grid">
-            <div class="chart-container">
-                <canvas id="resultsChart" width="400" height="400"></canvas>
-            </div>
-            <div class="outcome-box">
-                <div>
-                    <h3>Your Party Performance</h3>
-                    <p style="color: var(--text-muted)" id="final-party-name">Your Party</p>
-                    <div class="seat-badge" id="final-seats-count">0</div>
-                    <p style="text-align:center; color: var(--text-muted)">Seats Won out of 543<br>(272 required for full majority)</p>
-                </div>
-                <div id="election-verdict" class="verdict">
-                    Calculating final coalition frameworks...
-                </div>
-                <button class="btn" style="margin-top: 20px;" onclick="location.reload()">Run Next Election Cycle</button>
-            </div>
+        <table id="results-table">
+            <thead>
+                <tr>
+                    <th>Political Coalition / Party Entity</th>
+                    <th>Popular Vote Share</th>
+                    <th>Seats Secured</th>
+                    <th>Status Bracket</th>
+                </tr>
+            </thead>
+            <tbody id="results-table-body"></tbody>
+        </table>
+
+        <div style="margin-top:30px;" id="post-game-controls" class="hidden">
+            <button class="btn" onclick="location.reload()">Run a New Game Session</button>
         </div>
     </div>
-
 </div>
 
 <script>
-    // System Game Configuration Logic
-    const PARTIES_CONFIG = [
-        { id: 'bjp', name: 'BJP', base: 35, cash: 1200, seats: 300, income: 25, desc: 'National Behemoth. Deepest pockets, structural ideological voter core.', color: '#ff9933', badge: 'Dominant Core' },
-        { id: 'inc', name: 'INC (Congress)', base: 22, cash: 600, seats: 250, income: 15, desc: 'Pan-India Footprint. Broad historical legacy voter machinery.', color: '#138808', badge: 'Legacy Base' },
-        { id: 'sp', name: 'Samajwadi Party', base: 14, cash: 250, seats: 80, income: 8, desc: 'Regional Heavyweight. High concentration metrics in the North belt.', color: '#22c55e', badge: 'Regional North' },
-        { id: 'tmc', name: 'Trinamool Congress', base: 13, cash: 240, seats: 60, income: 8, desc: 'Regional Fortress. Immense local defense structural wall in the East.', color: '#ec4899', badge: 'Regional East' },
-        { id: 'aap', name: 'Aam Aadmi Party', base: 10, cash: 150, seats: 40, income: 6, desc: 'Urban Core focus. High growth dynamics, volatile voter retention.', color: '#06b6d4', badge: 'Urban Centric' },
-        { id: 'custom', name: 'Create Custom Party', base: 3, cash: 80, seats: 15, income: 4, desc: 'Underdog start. Minimal brand visibility, weak capital infrastructure.', color: '#a855f7', badge: 'Independent Start' }
+    // Game Data Schematics
+    const PRESET_PARTIES = [
+        { id: 'bjp', name: 'Bharatiya Janata Party', alias: 'BJP', tier: 'High', budget: 1500, pop: 38, ideology: 'Right-wing Populism / Hindutva', color: '#FF9933' },
+        { id: 'inc', name: 'Indian National Congress', alias: 'INC', tier: 'High', budget: 1100, pop: 28, ideology: 'Social Democracy / Secularism', color: '#19AAED' },
+        { id: 'ncp', name: 'Nationalist Congress Party', alias: 'NCP', tier: 'High', budget: 800, pop: 18, ideology: 'Social Democracy / Secularism', color: '#00FF00' },
+        { id: 'aap', name: 'Aam Aadmi Party', alias: 'AAP', tier: 'Moderate', budget: 450, pop: 12, ideology: 'Social Democracy / Secularism', color: '#006699' },
+        { id: 'sp', name: 'Samajwadi Party', alias: 'SP', tier: 'Moderate', budget: 400, pop: 14, ideology: 'Regionalism / Social Justice', color: '#224422' },
+        { id: 'tmc', name: 'Trinamool Congress', alias: 'TMC', tier: 'Moderate', budget: 420, pop: 13, ideology: 'Regionalism / Social Justice', color: '#339933' },
+        { id: 'tdp', name: 'Telugu Desam Party', alias: 'TDP', tier: 'Moderate', budget: 380, pop: 10, ideology: 'Regionalism / Social Justice', color: '#FFFF00' },
+        { id: 'aiadmk', name: 'All India Anna Dravida Munnetra Kazhagam', alias: 'AIADMK', tier: 'Moderate', budget: 350, pop: 9, ideology: 'Regionalism / Social Justice', color: '#117711' },
+        { id: 'jdu', name: 'Janata Dal (United)', alias: 'JD(U)', tier: 'Moderate', budget: 300, pop: 8, ideology: 'Regionalism / Social Justice', color: '#003366' },
+        { id: 'aimim', name: 'All India Majlis-e-Ittehadul Muslimeen', alias: 'AIMIM', tier: 'Low', budget: 120, pop: 4, ideology: 'Regionalism / Social Justice', color: '#004400' },
+        { id: 'bsp', name: 'Bahujan Samaj Party', alias: 'BSP', tier: 'Low', budget: 150, pop: 5, ideology: 'Regionalism / Social Justice', color: '#000080' },
+        { id: 'iuml', name: 'Indian Union Muslim League', alias: 'IUML', tier: 'Low', budget: 90, pop: 3, ideology: 'Regionalism / Social Justice', color: '#006633' }
     ];
 
-    let gameState = {
-        currentWeek: 100,
-        selectedParty: null,
-        partyName: '',
-        treasury: 0,
-        momentum: 0,
-        contestingSeats: 0,
-        weeklyIncome: 0,
-        color: '#2563eb'
-    };
+    const INDIAN_STATES = [
+        { name: "Uttar Pradesh", seatsLS: 80, weight: 1.2 },
+        { name: "Maharashtra", seatsLS: 48, weight: 1.1 },
+        { name: "West Bengal", seatsLS: 42, weight: 1.05 },
+        { name: "Bihar", seatsLS: 40, weight: 1.0 },
+        { name: "Tamil Nadu", seatsLS: 39, weight: 1.1 },
+        { name: "Madhya Pradesh", seatsLS: 29, weight: 0.95 },
+        { name: "Karnataka", seatsLS: 28, weight: 1.0 },
+        { name: "Gujarat", seatsLS: 26, weight: 1.15 },
+        { name: "Andhra Pradesh", seatsLS: 25, weight: 1.0 },
+        { name: "Rajasthan", seatsLS: 25, weight: 0.95 },
+        { name: "Other Regional Zones", seatsLS: 166, weight: 0.9 }
+    ];
 
-    // Initialization Sequence
-    function init() {
-        const grid = document.getElementById('party-selectors');
+    // State Space variables
+    let playerLeader = "";
+    let playerParty = null;
+    let selectedPartyId = "";
+    let electionType = "Lok Sabha";
+    let gameMonths = 12;
+    let alliancePartners = [];
+    let constituencies = [];
+    let seatsFieldedStatus = {}; 
+
+    // Initialize Setup Matrix
+    function initSetup() {
+        const grid = document.getElementById('party-selection-grid');
         grid.innerHTML = '';
-        
-        PARTIES_CONFIG.forEach(p => {
+        PRESET_PARTIES.forEach(party => {
+            const badgeClass = party.tier === 'High' ? 'badge-high' : (party.tier === 'Moderate' ? 'badge-med' : 'badge-low');
             const card = document.createElement('div');
-            card.className = `party-card`;
-            card.id = `card-${p.id}`;
-            card.onclick = () => selectPartyStyle(p.id);
-            
+            card.className = `card party-card`;
+            card.id = `party-card-${party.id}`;
+            card.onclick = () => selectPresetParty(party.id);
             card.innerHTML = `
-                <h3>${p.name} <span class="badge" style="background:${p.color}33; color:${p.color}">${p.badge}</span></h3>
-                <p class="party-meta">${p.desc}</p>
-                <div class="party-meta" style="margin-top:10px; display:flex; justify-content:space-between;">
-                    <span>Treasury: <strong>₹${p.cash} Cr</strong></span>
-                    <span>Starting Base: <strong>${p.base}%</strong></span>
-                </div>
+                <h4>${party.name} (${party.alias})</h4>
+                <div class="badge ${badgeClass}">Budget Tier: ${party.tier} (₹${party.budget} Cr)</div>
+                <p style="font-size: 13px; margin-top:8px;"><strong>Ideology:</strong> ${party.ideology}</p>
+                <p style="font-size: 13px;"><strong>Base Base Support:</strong> ${party.pop}%</p>
             `;
             grid.appendChild(card);
         });
     }
 
-    function selectPartyStyle(partyId) {
+    function selectPresetParty(id) {
         document.querySelectorAll('.party-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById(`card-${partyId}`).classList.add('selected');
-        
-        const customInput = document.getElementById('custom-party-name');
-        if (partyId === 'custom') {
-            customInput.style.display = 'block';
-            customInput.focus();
-        } else {
-            customInput.style.display = 'none';
+        document.getElementById(`party-card-${id}`).classList.add('selected');
+        selectedPartyId = id;
+        playerParty = { ...PRESET_PARTIES.find(p => p.id === id) };
+        document.getElementById('custom-party-name').value = '';
+        document.getElementById('custom-party-alias').value = '';
+    }
+
+    function selectCustomParty() {
+        document.querySelectorAll('.party-card').forEach(c => c.classList.remove('selected'));
+        const name = document.getElementById('custom-party-name').value;
+        const alias = document.getElementById('custom-party-alias').value;
+        const ideology = document.getElementById('custom-party-ideology').value;
+
+        if(!name || !alias) {
+            alert("Please specify tracking fields for your custom political faction identity.");
+            return;
         }
-        
-        gameState.selectedParty = PARTIES_CONFIG.find(p => p.id === partyId);
-        document.getElementById('start-game-btn').disabled = false;
+
+        playerParty = {
+            id: 'custom',
+            name: name,
+            alias: alias,
+            tier: 'Low',
+            budget: 180, 
+            pop: 6,
+            ideology: ideology,
+            color: '#4A5568'
+        };
+        selectedPartyId = 'custom';
+        alert(`Successfully initialized ${alias}. Your regional start grants a Tier 3 campaign budget.`);
     }
 
     function startGame() {
-        const config = gameState.selectedParty;
-        if (!config) return;
+        playerLeader = document.getElementById('leader-name').value;
+        electionType = document.getElementById('election-type').value;
 
-        if (config.id === 'custom') {
-            const customName = document.getElementById('custom-party-name').value.trim();
-            gameState.partyName = customName ? customName : "Janata Party";
-        } else {
-            gameState.partyName = config.name;
+        if(!playerParty) {
+            alert("Please click on a pre-existing national party block or instantiate a custom outfit.");
+            return;
+        }
+        if(!playerLeader) {
+            alert("Provide a leader designation name to run command operations.");
+            return;
         }
 
-        gameState.treasury = config.cash;
-        gameState.momentum = config.base;
-        gameState.contestingSeats = config.seats;
-        gameState.weeklyIncome = config.income;
-        gameState.color = config.color;
-        gameState.currentWeek = 100;
-
-        // Switch Screen views
-        document.getElementById('screen-setup').classList.remove('active');
-        document.getElementById('screen-game').classList.add('active');
+        // Generate constituency allocation maps
+        constituencies = [];
+        const scaleFactor = (electionType === "Lok Sabha") ? 1 : 0.46; 
         
-        updateDashboardUI();
-        logFeed(`Welcome to the war room of ${gameState.partyName}. You have 100 weeks before India goes to the polls. Calculate deployment paths carefully.`);
-    }
-
-    function updateDashboardUI() {
-        document.getElementById('stat-weeks').innerText = `${gameState.currentWeek} Weeks`;
-        document.getElementById('stat-treasury').innerText = `₹${Math.floor(gameState.treasury)} Cr`;
-        document.getElementById('stat-momentum').innerText = `${gameState.momentum.toFixed(1)}%`;
-        document.getElementById('stat-seats').innerText = `${gameState.contestingSeats} / 543`;
-
-        // Update progress bar
-        const progressPct = ((100 - gameState.currentWeek) / 100) * 100;
-        document.getElementById('game-progress').style.width = `${progressPct}%`;
-
-        // Update dynamic candidate placement cost formula
-        const nextSeatCost = Math.floor(gameState.contestingSeats * 0.95);
-        const seatBtn = document.getElementById('btn-field-seats');
-        seatBtn.innerText = `Fund (₹${nextSeatCost} Cr)`;
-        
-        if (gameState.treasury < nextSeatCost || gameState.contestingSeats >= 543) {
-            seatBtn.disabled = true;
-        } else {
-            seatBtn.disabled = false;
-        }
-    }
-
-    function logFeed(message, isImportant = false) {
-        const log = document.getElementById('feed-log');
-        const item = document.createElement('div');
-        item.className = `feed-item ${isImportant ? 'important' : ''}`;
-        item.innerText = `[Week ${101 - gameState.currentWeek}] ${message}`;
-        log.insertBefore(item, log.firstChild);
-    }
-
-    function executeAction(actionType) {
-        if (gameState.currentWeek <= 0) return;
-
-        // Allocation logic parsing
-        if (actionType === 'rally') {
-            const cost = 20;
-            if (gameState.treasury < cost) { logFeed("Insufficient capital to execute massive ground rallies!", true); return; }
-            gameState.treasury -= cost;
-            const gain = 1.2 + Math.random() * 1.5;
-            gameState.momentum += gain;
-            logFeed(`Organized massive cluster rallies across target districts. Momentum grew +${gain.toFixed(2)}% (Cost: ₹${cost} Cr)`);
-        } 
-        else if (actionType === 'media') {
-            const cost = 85;
-            if (gameState.treasury < cost) { logFeed("Insufficient war chest resources for a nationwide media blitz!", true); return; }
-            gameState.treasury -= cost;
-            const gain = 3.5 + Math.random() * 4.0;
-            gameState.momentum += gain;
-            logFeed(`Launched nationwide television & social media blanket saturation. Momentum surged +${gain.toFixed(2)}% (Cost: ₹${cost} Cr)`);
-        } 
-        else if (actionType === 'fundraiser') {
-            const cost = 10;
-            if (gameState.treasury < cost) { logFeed("Insufficient capital to set up premium corporate events.", true); return; }
-            gameState.treasury -= cost;
-            const cashInflow = 120 + Math.random() * 70;
-            const momentumLoss = 0.8;
-            gameState.treasury += cashInflow;
-            gameState.momentum = Math.max(2, gameState.momentum - momentumLoss);
-            gameState.weeklyIncome += 2; // Incremental structural growth
-            logFeed(`Closed closed-door investment round with enterprise leaders. Gained ₹${cashInflow.toFixed(0)} Cr. Popularity dropped slightly due to transparency criticism.`);
-        } 
-        else if (actionType === 'field') {
-            const cost = Math.floor(gameState.contestingSeats * 0.95);
-            if (gameState.treasury < cost) return;
-            if (gameState.contestingSeats >= 543) return;
-            
-            gameState.treasury -= cost;
-            gameState.contestingSeats = Math.min(543, gameState.contestingSeats + 25);
-            logFeed(`Expanded party infrastructure apparatus. Added 25 candidate slots to field operations. Now contesting ${gameState.contestingSeats} seats.`);
-        }
-
-        // Process Week Cycle Overheads
-        gameState.currentWeek--;
-        gameState.treasury += gameState.weeklyIncome;
-
-        // Apply natural momentum decay simulation (fatigue factor)
-        gameState.momentum = Math.max(1, gameState.momentum * 0.992);
-
-        // Inject random events throughout campaign cycle
-        if (gameState.currentWeek > 0 && Math.random() < 0.15) {
-            triggerRandomEvent();
-        }
-
-        updateDashboardUI();
-
-        if (gameState.currentWeek <= 0) {
-            triggerElectionDay();
-        }
-    }
-
-    function triggerRandomEvent() {
-        const events = [
-            { text: "A massive multi-state ground scandal hits your inner faction circles.", treasury: -30, momentum: -3.5 },
-            { text: "Your policy manifesto positions catch positive structural virality among youth cohorts.", treasury: 0, momentum: 4.0 },
-            { text: "Internal infighting over seat distributions leaks directly to prominent news outlets.", treasury: -15, momentum: -2.0 },
-            { text: "A major local regional coalition breaks off, endorsing your organizational vision.", treasury: 40, momentum: 2.5 }
-        ];
-        
-        const selection = events[Math.floor(Math.random() * events.length)];
-        gameState.treasury = Math.max(0, gameState.treasury + selection.treasury);
-        gameState.momentum = Math.max(1, gameState.momentum + selection.momentum);
-        logFeed(`CRISIS ALERT: ${selection.text}`, true);
-    }
-
-    function triggerElectionDay() {
-        document.getElementById('screen-game').classList.remove('active');
-        document.getElementById('screen-results').classList.add('active');
-        
-        document.getElementById('final-party-name').innerText = gameState.partyName;
-        document.getElementById('final-party-name').style.color = gameState.color;
-
-        // Complex algorithm processing seat metrics derived from momentum capability and active fielded seats
-        const calculatedMaxSeats = Math.round((gameState.momentum / 100) * 543 * 1.6);
-        let userSeats = Math.min(gameState.contestingSeats, calculatedMaxSeats);
-        
-        // Safety bounds normalization
-        if (userSeats < 5 && gameState.contestingSeats > 40) {
-            userSeats = 12 + Math.floor(Math.random() * 20);
-        }
-        userSeats = Math.min(543, Math.max(0, userSeats));
-
-        // Assign remaining distribution among competitors
-        let leftover = 543 - userSeats;
-        
-        let opp1 = Math.floor(leftover * 0.45);
-        let opp2 = Math.floor(leftover * 0.35);
-        let others = leftover - opp1 - opp2;
-
-        document.getElementById('final-seats-count').innerText = userSeats;
-
-        // Verdict output routing
-        const verdictBox = document.getElementById('election-verdict');
-        if (userSeats >= 272) {
-            verdictBox.className = "verdict win";
-            verdictBox.innerText = `HISTORIC ABSOLUTE MAJORITY! ${gameState.partyName} forms the government independently.`;
-        } else if (userSeats >= 180) {
-            verdictBox.className = "verdict coalition";
-            verdictBox.innerText = `HUNG PARLIAMENT! ${gameState.partyName} has enough leverage to secure regional partners and build a coalition executive framework.`;
-        } else {
-            verdictBox.className = "verdict loss";
-            verdictBox.innerText = `ELECTION DEFEAT. Failing to cross standard operational thresholds, you are relegated to the Opposition benches.`;
-        }
-
-        // Render analytical visuals 
-        const ctx = document.getElementById('resultsChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: [gameState.partyName, 'National Opposition Block A', 'Regional Coalition Alliance B', 'Independents/Other'],
-                datasets: [{
-                    data: [userSeats, opp1, opp2, others],
-                    backgroundColor: [gameState.color, '#ef4444', '#f59e0b', '#64748b'],
-                    borderWidth: 1,
-                    borderColor: '#1e293b'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#f8fafc' }
-                    }
-                }
+        INDIAN_STATES.forEach((state, i) => {
+            const calculatedSeats = Math.max(1, Math.round(state.seatsLS * scaleFactor));
+            for(let cell = 1; cell <= calculatedSeats; cell++) {
+                constituencies.push({
+                    id: `${state.name.substring(0,3)}-${cell}`,
+                    name: `${state.name} Seat #${cell}`,
+                    state: state.name,
+                    weight: state.weight * (0.8 + Math.random() * 0.4)
+                });
             }
+        });
+
+        // Initialize display configuration switches
+        document.getElementById('screen-setup').classList.add('hidden');
+        document.getElementById('screen-dashboard').classList.remove('hidden');
+        
+        document.getElementById('dash-title').innerText = `${playerParty.name} Campaign Operations Room — Leader: ${playerLeader}`;
+        
+        updateDashboard();
+        renderAlliancePanel();
+        renderConstituencies();
+    }
+
+    function updateDashboard() {
+        document.getElementById('stat-month').innerText = gameMonths;
+        document.getElementById('stat-budget').innerText = playerParty.budget;
+        document.getElementById('stat-pop').innerText = playerParty.pop.toFixed(1);
+        
+        let count = 0;
+        constituencies.forEach(c => { if(seatsFieldedStatus[c.id]) count++; });
+        document.getElementById('seats-fielded-count').innerText = count;
+        document.getElementById('total-seats-count').innerText = constituencies.length;
+    }
+
+    function renderAlliancePanel() {
+        const container = document.getElementById('alliance-options');
+        container.innerHTML = '';
+        
+        PRESET_PARTIES.forEach(p => {
+            if(p.id === playerParty.id) return;
+            
+            const row = document.createElement('div');
+            row.style.marginSummary = "8px 0";
+            row.style.display = "flex";
+            row.style.justifyContent = "space-between";
+            row.style.alignItems = "center";
+            row.style.padding = "6px";
+            row.style.borderBottom = "1px dashed #eee";
+
+            const ideologyMatch = (p.ideology === playerParty.ideology);
+            const btnHtml = ideologyMatch 
+                ? `<button class="btn btn-accent" style="padding:4px 8px; font-size:11px;" onclick="formAlliance('${p.id}')">Form Front</button>` 
+                : `<span style="font-size:11px; color:#999; font-style:italic;">Mismatched Ideology</span>`;
+
+            row.innerHTML = `<span><strong>${p.alias}</strong> (${p.ideology.split(' / ')[0]})</span> ${btnHtml}`;
+            container.appendChild(row);
         });
     }
 
-    // Launch Application
-    window.onload = init;
+    function formAlliance(id) {
+        const target = PRESET_PARTIES.find(p => p.id === id);
+        if(alliancePartners.includes(target.alias)) {
+            alert("This faction is already nested into your United National front.");
+            return;
+        }
+        alliancePartners.push(target.alias);
+        playerParty.pop += (target.pop * 0.35); // Cumulative tactical vote swings transferred to front manager
+        document.getElementById('alliance-list').innerText = alliancePartners.join(', ');
+        updateDashboard();
+        alert(`Coalition treaty inked successfully with ${target.alias}! Base target projections expanded.`);
+    }
+
+    function buyMarketing(type, cost) {
+        if(gameMonths <= 0) {
+            alert("Electoral notification clock active. Field candidates immediately to trigger vote machinery counts.");
+            return;
+        }
+        if(playerParty.budget < cost) {
+            alert("Insufficient liquidity reserves remaining in campaign accounting lockers.");
+            return;
+        }
+        
+        playerParty.budget -= cost;
+        if(type === 'ads') playerParty.pop += 2.2;
+        if(type === 'rally') playerParty.pop += 6.5;
+        
+        gameMonths--;
+        updateDashboard();
+    }
+
+    function renderConstituencies() {
+        const container = document.getElementById('constituency-container');
+        container.innerHTML = '';
+
+        constituencies.forEach(c => {
+            const row = document.createElement('div');
+            row.className = "constituency-row";
+            
+            const isFielded = seatsFieldedStatus[c.id] ? true : false;
+            const actionBtn = isFielded 
+                ? `<button class="btn btn-accent" style="padding: 6px 12px; font-size:12px; background:#e53e3e;" onclick="toggleSeat('${c.id}')">Retract Ticket</button>`
+                : `<button class="btn" style="padding: 6px 12px; font-size:12px;" onclick="toggleSeat('${c.id}')">Deploy Nominee (-₹2 Cr)</button>`;
+
+            row.innerHTML = `
+                <div>
+                    <strong>${c.name}</strong> <span style="font-size:12px; color:#718096;">(${c.state})</span>
+                </div>
+                <div>${actionBtn}</div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function toggleSeat(id) {
+        if(seatsFieldedStatus[id]) {
+            delete seatsFieldedStatus[id];
+            playerParty.budget += 2;
+        } else {
+            if(playerParty.budget < 2) {
+                alert("Electoral commission demands structural security deposits to field nominees.");
+                return;
+            }
+            seatsFieldedStatus[id] = true;
+            playerParty.budget -= 2;
+        }
+        updateDashboard();
+        renderConstituencies();
+    }
+
+    // RESOLUTION BALLOT SYSTEM PHASE
+    function triggerElections() {
+        let fieldedCount = Object.keys(seatsFieldedStatus).length;
+        if(fieldedCount === 0) {
+            alert("Your party must deploy at least one candidate onto the provincial matrix grid to test democratic franchise outcomes.");
+            return;
+        }
+
+        document.getElementById('screen-dashboard').classList.add('hidden');
+        document.getElementById('screen-results').remove();
+        
+        // Dynamic construction of results sheet to match syntax block tracking protocols safely
+        const resultsHtmlBlock = `
+        <div id="screen-results">
+            <h2>Live ECI Counting Room Dashboard</h2>
+            <p id="counting-status" style="font-weight: bold; color: #dd6b20;">Counting of electronic ballots underway...</p>
+            <div class="progress-container" id="results-visual-bar"></div>
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>Political Coalition / Party Entity</th>
+                        <th>Popular Vote Share</th>
+                        <th>Seats Secured</th>
+                        <th>Status Bracket</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table-body"></tbody>
+            </table>
+            <div style="margin-top:30px;" id="post-game-controls" class="hidden">
+                <button class="btn" onclick="location.reload()">Run a New Game Session</button>
+            </div>
+        </div>`;
+        
+        document.querySelector('.container').insertAdjacentHTML('beforeend', resultsHtmlBlock);
+        calculateVotes();
+    }
+
+    function calculateVotes() {
+        const totalSeats = constituencies.length;
+        let partyTallies = {};
+
+        // Setup Tracking Framework Objects
+        PRESET_PARTIES.forEach(p => {
+            partyTallies[p.alias] = { name: p.name, alias: p.alias, votes: 0, seats: 0, color: p.color, userFront: false };
+        });
+        
+        // Add Player Party tracking hook directly
+        const playerAlias = playerParty.alias;
+        if(!partyTallies[playerAlias]) {
+            partyTallies[playerAlias] = { name: playerParty.name, alias: playerAlias, votes: 0, seats: 0, color: playerParty.color, userFront: true };
+        } else {
+            partyTallies[playerAlias].userFront = true;
+        }
+        
+        // Mark coalition transfers safely
+        alliancePartners.forEach(partnerAlias => {
+            if(partyTallies[partnerAlias]) partyTallies[partnerAlias].userFront = true;
+        });
+
+        let totalSimulatedVotes = 0;
+
+        // Process seats distributions sequentially
+        constituencies.forEach(c => {
+            let seatVotes = {};
+            let highestVotes = 0;
+            let seatWinner = "";
+
+            // Evaluate shares context vectors per block
+            PRESET_PARTIES.forEach(p => {
+                let baseShare = p.pop * c.weight;
+                // AI simulation logic accounts for unfielded terrain zones dynamically
+                if(p.id === playerParty.id) {
+                    baseShare = seatsFieldedStatus[c.id] ? (playerParty.pop * c.weight * 1.3) : 0;
+                }
+                
+                let noise = (Math.random() * 8) - 4;
+                let finalVotePool = Math.max(0, Math.round((baseShare + noise) * 1000));
+                
+                seatVotes[p.alias] = finalVotePool;
+                partyTallies[p.alias].votes += finalVotePool;
+                totalSimulatedVotes += finalVotePool;
+
+                if(finalVotePool > highestVotes) {
+                    highestVotes = finalVotePool;
+                    seatWinner = p.alias;
+                }
+            });
+
+            // Adjust custom asset if player initialized non-preset identity
+            if(playerParty.id === 'custom') {
+                let baseShare = seatsFieldedStatus[c.id] ? (playerParty.pop * c.weight * 1.4) : 0;
+                let noise = (Math.random() * 6) - 2;
+                let finalVotePool = Math.max(0, Math.round((baseShare + noise) * 1000));
+                
+                if(!seatVotes[playerAlias]) seatVotes[playerAlias] = 0;
+                seatVotes[playerAlias] = finalVotePool;
+                partyTallies[playerAlias].votes += finalVotePool;
+                totalSimulatedVotes += finalVotePool;
+
+                if(finalVotePool > highestVotes) {
+                    highestVotes = finalVotePool;
+                    seatWinner = playerAlias;
+                }
+            }
+
+            if(seatWinner) {
+                partyTallies[seatWinner].seats += 1;
+            }
+        });
+
+        // Group into primary national binary coalitions blocks 
+        let userCoalitionSeats = 0;
+        let oppositionSeats = 0;
+        let resultsArray = Object.values(partyTallies);
+
+        resultsArray.forEach(item => {
+            item.voteSharePercentage = ((item.votes / totalSimulatedVotes) * 100).toFixed(1);
+            if(item.userFront) {
+                userCoalitionSeats += item.seats;
+            } else {
+                oppositionSeats += item.seats;
+            }
+        });
+
+        // Sort descending metrics logic
+        resultsArray.sort((x, y) => y.seats - x.seats);
+
+        // Display results block loop sequentially
+        const tbody = document.getElementById('results-table-body');
+        tbody.innerHTML = '';
+        
+        resultsArray.forEach(item => {
+            if(item.votes === 0 && item.seats === 0) return; // filter empty regional noises
+            
+            const tr = document.createElement('tr');
+            if(item.userFront) tr.style.background = "#fffaf0";
+            
+            let contextLabel = item.userFront ? "<strong>Your Front Alliance</strong>" : "Opposition Unit";
+            if(item.alias === playerParty.alias) contextLabel = "<strong>Your Own Ticket</strong>";
+
+            tr.innerHTML = `
+                <td><span style="display:inline-block; width:12px; height:12px; background:${item.color}; margin-right:8px; border-radius:2px;"></span>${item.name} (${item.alias})</td>
+                <td>${item.voteSharePercentage}%</td>
+                <td><strong>${item.seats}</strong></td>
+                <td>${contextLabel}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Render cumulative alliance assembly charts
+        const progressContainer = document.getElementById('results-visual-bar');
+        progressContainer.innerHTML = '';
+        
+        const userBarWidth = (userCoalitionSeats / totalSeats) * 100;
+        const oppBarWidth = 100 - userBarWidth;
+
+        progressContainer.innerHTML = `
+            <div class="progress-bar" style="width: ${userBarWidth}%; background: #3182ce;">Your Coalition (${userCoalitionSeats})</div>
+            <div class="progress-bar" style="width: ${oppBarWidth}%; background: #e53e3e;">Opposition forces (${oppositionSeats})</div>
+        `;
+
+        // Update tracking win conditions labels
+        const statusPara = document.getElementById('counting-status');
+        const majorityNeeded = Math.floor(totalSeats / 2) + 1;
+        
+        if(userCoalitionSeats >= majorityNeeded) {
+            statusPara.innerHTML = `🎉 Democratic Majority Secured! Your alliance commanded ${userCoalitionSeats} seats out of ${totalSeats} (Majority Target: ${majorityNeeded}). You are invited to form the government leadership structure!`;
+            statusPara.style.color = "#2f855a";
+        } else {
+            statusPara.innerHTML = `⚠️ Coalition Defeat. Your political front gathered ${userCoalitionSeats} seats out of ${totalSeats}. The opposition alliance passed the benchmark threshold of ${majorityNeeded} to occupy the treasure benches.`;
+            statusPara.style.color = "#c53030";
+        }
+
+        document.getElementById('post-game-controls').classList.remove('hidden');
+    }
+
+    // Boot entry state run initialization
+    window.onload = initSetup;
 </script>
 </body>
 </html>
